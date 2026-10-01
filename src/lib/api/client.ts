@@ -56,13 +56,39 @@ function qs(params: object) {
   return s ? `?${s}` : "";
 }
 
+async function httpForm<T>(path: string, form: FormData): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: "POST",
+    headers: {
+      ...(authToken ? { authorization: `Bearer ${authToken}` } : {}),
+    },
+    body: form,
+  });
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!res.ok) throw new ApiError(res.status, (data?.message as string) ?? res.statusText);
+  return data as T;
+}
+
 export const api = {
   /* auth */
-  register: (input: Parameters<typeof store.register>[0]) =>
-    call("POST", "/api/auth/register", () => store.register(input), input),
-  verifyOtp: (input: { mobile: string; code: string }) =>
+  register: (input: Parameters<typeof store.register>[0] & { resumeFile?: File | null }) => {
+    if (BASE_URL) {
+      const form = new FormData();
+      form.append("name", input.name);
+      form.append("email", input.email);
+      form.append("mobile", input.mobile);
+      form.append("password", input.password);
+      form.append("role", input.role);
+      if (input.skills?.length) form.append("skills", input.skills.join(","));
+      if (input.resumeFile) form.append("resume", input.resumeFile);
+      return httpForm<{ email: string; devOtp?: string }>("/api/auth/register", form);
+    }
+    return call("POST", "/api/auth/register", () => store.register(input), input);
+  },
+  verifyOtp: (input: { email: string; code: string }) =>
     call("POST", "/api/auth/verify-otp", () => store.verifyOtp(input), input),
-  resendOtp: (input: { mobile: string }) =>
+  resendOtp: (input: { email: string }) =>
     call("POST", "/api/auth/resend-otp", () => store.resendOtp(input), input),
   login: (input: { identifier: string; password: string }) =>
     call("POST", "/api/auth/login", () => store.login(input), input),
@@ -106,6 +132,15 @@ export const api = {
   confirmConsultation: (id: string) =>
     call("POST", `/api/consultations/${id}/confirm`, () =>
       store.confirmConsultation(authToken, id),
+    ),
+  completeConsultation: (id: string) =>
+    call("POST", `/api/consultations/${id}/complete`, () =>
+      store.completeConsultation(authToken, id),
+    ),
+  rateConsultation: (id: string, input: { stars: number; comment?: string }) =>
+    call("POST", `/api/consultations/${id}/rate`, () =>
+      store.rateConsultation(authToken, id, input),
+      input,
     ),
 
   /* reports */

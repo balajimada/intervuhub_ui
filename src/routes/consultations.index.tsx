@@ -14,7 +14,7 @@ import { api } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { CONSULTATION_MODES, CONSULTATION_TOPICS, type ConsultationMode } from "@/lib/api/types";
-import { collectErrors, consultationSchema, type FieldErrors } from "@/lib/validation";
+import { collectErrors, consultationSchema, ratingSchema, type FieldErrors } from "@/lib/validation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,7 +88,7 @@ const WHY = [
 
 function ConsultationsPage() {
   const { trainerId } = Route.useSearch();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -139,6 +139,27 @@ function ConsultationsPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not cancel."),
   });
 
+  const complete = useMutation({
+    mutationFn: (id: string) => api.completeConsultation(id),
+    onSuccess: () => {
+      toast.success("Consultation marked as completed.");
+      void queryClient.invalidateQueries({ queryKey: ["consultations"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not complete."),
+  });
+
+  const rate = useMutation({
+    mutationFn: (input: { id: string; stars: number; comment?: string }) =>
+      api.rateConsultation(input.id, { stars: input.stars, comment: input.comment }),
+    onSuccess: () => {
+      toast.success("Thanks for your feedback.");
+      void queryClient.invalidateQueries({ queryKey: ["consultations"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not submit rating."),
+  });
+
+  const [ratingDraft, setRatingDraft] = useState<Record<string, { stars: number; comment: string }>>({});
+
   const confirm = useMutation({
     mutationFn: (id: string) => api.confirmConsultation(id),
     onSuccess: () => {
@@ -147,6 +168,20 @@ function ConsultationsPage() {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not confirm."),
   });
+
+  const submitRating = (consultationId: string) => {
+    const draft = ratingDraft[consultationId] ?? { stars: 5, comment: "" };
+    const parsed = ratingSchema.safeParse(draft);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Invalid rating.");
+      return;
+    }
+    rate.mutate({
+      id: consultationId,
+      stars: parsed.data.stars,
+      comment: parsed.data.comment,
+    });
+  };
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -351,16 +386,32 @@ function ConsultationsPage() {
                     With {c.trainerName} · {formatDate(c.preferredDate)}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">{c.details}</p>
+                  {c.rating ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Rated {c.rating.stars}/5
+                      {c.rating.comment ? ` — ${c.rating.comment}` : ""}
+                    </p>
+                  ) : null}
                   {c.status === "Requested" || c.status === "Confirmed" ? (
-                    <div className="mt-3 flex gap-2">
-                      {c.status === "Requested" ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {c.status === "Requested" && user?.id === c.trainerId ? (
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => confirm.mutate(c.id)}
                           disabled={confirm.isPending}
                         >
-                          Confirm (trainer)
+                          Confirm
+                        </Button>
+                      ) : null}
+                      {c.status === "Confirmed" && user?.id === c.trainerId ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => complete.mutate(c.id)}
+                          disabled={complete.isPending}
+                        >
+                          Mark completed
                         </Button>
                       ) : null}
                       <Button
@@ -370,6 +421,45 @@ function ConsultationsPage() {
                         disabled={cancel.isPending}
                       >
                         Cancel
+                      </Button>
+                    </div>
+                  ) : null}
+                  {c.status === "Completed" && user?.id === c.seekerId && !c.rating ? (
+                    <div className="mt-3 space-y-2 rounded-lg border border-border p-3">
+                      <Label htmlFor={`stars-${c.id}`}>Rate this trainer</Label>
+                      <Select
+                        value={String(ratingDraft[c.id]?.stars ?? 5)}
+                        onValueChange={(v) =>
+                          setRatingDraft((prev) => ({
+                            ...prev,
+                            [c.id]: { stars: Number(v), comment: prev[c.id]?.comment ?? "" },
+                          }))
+                        }
+                      >
+                        <SelectTrigger id={`stars-${c.id}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[5, 4, 3, 2, 1].map((n) => (
+                            <SelectItem key={n} value={String(n)}>
+                              {n} star{n === 1 ? "" : "s"}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Textarea
+                        rows={2}
+                        placeholder="Optional feedback (what helped, what to improve)"
+                        value={ratingDraft[c.id]?.comment ?? ""}
+                        onChange={(e) =>
+                          setRatingDraft((prev) => ({
+                            ...prev,
+                            [c.id]: { stars: prev[c.id]?.stars ?? 5, comment: e.target.value },
+                          }))
+                        }
+                      />
+                      <Button size="sm" onClick={() => submitRating(c.id)} disabled={rate.isPending}>
+                        Submit rating
                       </Button>
                     </div>
                   ) : null}

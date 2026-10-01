@@ -21,7 +21,7 @@ export const Route = createFileRoute("/openings/")({
       {
         name: "description",
         content:
-          "Browse community-sourced interview openings by company, tech stack and experience level. Every post expires after 90 days.",
+          "Browse community-sourced interview openings by company, tech stack and experience level. Every post expires after 60 days.",
       },
       { property: "og:title", content: "Live interview openings — IntervuHub" },
       {
@@ -74,7 +74,7 @@ function OpeningsPage() {
         <div className="min-w-0">
           <h1 className="text-2xl font-bold sm:text-3xl">Interview openings</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Shared by people in the community. Posts disappear 90 days after they go up.
+            Shared by people in the community. Posts disappear 60 days after they go up.
           </p>
         </div>
         {isAuthenticated ? (
@@ -110,7 +110,7 @@ function OpeningsPage() {
               title="No live openings match this"
               description={
                 hasActiveFilters(filters)
-                  ? "Try clearing a filter or two — openings expire after 90 days, so the board moves fast."
+                  ? "Try clearing a filter or two — openings expire after 60 days, so the board moves fast."
                   : "Nothing is live right now. If you know of a role that's open, be the first to share it."
               }
               action={

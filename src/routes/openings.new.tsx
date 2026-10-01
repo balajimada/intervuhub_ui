@@ -80,7 +80,7 @@ function NewOpeningPage() {
     }) => api.createOpening(input),
     onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ["openings"] });
-      toast.success("Opening posted. It stays live for 90 days.");
+      toast.success("Opening posted. It stays live for 60 days.");
       navigate({ to: "/openings/$openingId", params: { openingId: created.id } });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not post the opening."),
@@ -113,7 +113,7 @@ function NewOpeningPage() {
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
       <h1 className="text-2xl font-bold sm:text-3xl">Post an interview opening</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Openings expire automatically after 90 days so the board stays fresh.
+        Openings expire automatically after 60 days so the board stays fresh.
       </p>
 
       <form onSubmit={onSubmit} noValidate className="surface mt-6 space-y-5 p-6">

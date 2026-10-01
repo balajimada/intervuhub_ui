@@ -49,7 +49,7 @@ function LoginPage() {
       if (status === 403 && /verify/i.test(message))
         setNotice({
           title: "Your account isn't active yet",
-          body: "Verify your mobile number to continue.",
+          body: "Verify your email to continue.",
           pending: true,
         });
       else if (status === 403)
@@ -90,10 +90,12 @@ function LoginPage() {
             {notice.pending ? (
               <Link
                 to="/auth/verify"
-                search={{ mobile: /^\+/.test(values.identifier) ? values.identifier : "" }}
+                search={{
+                  email: values.identifier.includes("@") ? values.identifier : "",
+                }}
                 className="font-medium underline underline-offset-4"
               >
-                Verify your mobile now
+                Verify your email now
               </Link>
             ) : null}
           </AlertDescription>

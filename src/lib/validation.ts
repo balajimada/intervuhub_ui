@@ -51,8 +51,13 @@ export const loginSchema = z.object({
 });
 
 export const otpSchema = z.object({
-  mobile: z.string().trim().regex(E164_INDIA, "Enter a valid mobile number."),
+  email: z.string().trim().email("Enter a valid email address."),
   code: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit code."),
+});
+
+export const ratingSchema = z.object({
+  stars: z.number().int().min(1, "Pick at least 1 star.").max(5, "Maximum 5 stars."),
+  comment: z.string().trim().max(500, "Keep feedback under 500 characters.").optional(),
 });
 
 export const questionSchema = z.object({

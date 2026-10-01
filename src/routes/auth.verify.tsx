@@ -14,16 +14,16 @@ const COOLDOWN = 30;
 
 export const Route = createFileRoute("/auth/verify")({
   validateSearch: (search: Record<string, unknown>) => ({
-    mobile: typeof search["mobile"] === "string" ? search["mobile"] : "",
+    email: typeof search["email"] === "string" ? search["email"] : "",
   }),
   head: () => ({
     meta: [
-      { title: "Verify your mobile number — IntervuHub" },
+      { title: "Verify your email — IntervuHub" },
       {
         name: "description",
-        content: "Enter the 6-digit code sent to your mobile to activate your IntervuHub account.",
+        content: "Enter the 6-digit code sent to your email to activate your IntervuHub account.",
       },
-      { property: "og:title", content: "Verify your mobile number — IntervuHub" },
+      { property: "og:title", content: "Verify your email — IntervuHub" },
       { property: "og:description", content: "Activate your IntervuHub account with an OTP." },
     ],
   }),
@@ -31,12 +31,12 @@ export const Route = createFileRoute("/auth/verify")({
 });
 
 function VerifyPage() {
-  const { mobile: initialMobile } = Route.useSearch();
+  const { email: initialEmail } = Route.useSearch();
   const navigate = useNavigate();
-  const [mobile, setMobile] = useState(initialMobile || "+91");
+  const [email, setEmail] = useState(initialEmail || "");
   const [code, setCode] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [cooldown, setCooldown] = useState(initialMobile ? COOLDOWN : 0);
+  const [cooldown, setCooldown] = useState(initialEmail ? COOLDOWN : 0);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -45,21 +45,20 @@ function VerifyPage() {
   }, [cooldown]);
 
   const verify = useMutation({
-    mutationFn: (input: { mobile: string; code: string }) => api.verifyOtp(input),
+    mutationFn: (input: { email: string; code: string }) => api.verifyOtp(input),
     onSuccess: () => {
-      toast.success("Mobile verified. You can sign in now.");
+      toast.success("Email verified. You can sign in now.");
       navigate({ to: "/auth/login" });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Verification failed."),
   });
 
   const resend = useMutation({
-    mutationFn: () => api.resendOtp({ mobile }),
+    mutationFn: () => api.resendOtp({ email }),
     onSuccess: (res) => {
       setCooldown(COOLDOWN);
       toast.success("A new code is on its way.", {
-        description: `Verification code: ${res.devOtp}`,
-        duration: 10000,
+        ...(res.devOtp ? { description: `Verification code: ${res.devOtp}`, duration: 10000 } : {}),
       });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not resend the code."),
@@ -67,7 +66,7 @@ function VerifyPage() {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = otpSchema.safeParse({ mobile, code });
+    const parsed = otpSchema.safeParse({ email, code });
     if (!parsed.success) {
       setErrors(collectErrors(parsed.error));
       return;
@@ -82,24 +81,25 @@ function VerifyPage() {
         <Link to="/" aria-label="IntervuHub home">
           <BrandLogo className="h-32 w-32 sm:h-40 sm:w-40" />
         </Link>
-        <h1 className="mt-6 text-2xl font-bold">Verify your mobile</h1>
+        <h1 className="mt-6 text-2xl font-bold">Verify your email</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          We sent a 6-digit code to your number. Enter it below to activate your account.
+          We sent a 6-digit code to your email. Enter it below to activate your account.
         </p>
       </div>
 
 
       <form onSubmit={onSubmit} noValidate className="surface mt-6 space-y-5 p-6">
         <div className="space-y-2">
-          <Label htmlFor="verify-mobile">Mobile number</Label>
+          <Label htmlFor="verify-email">Email</Label>
           <Input
-            id="verify-mobile"
-            inputMode="tel"
-            value={mobile}
-            onChange={(e) => setMobile(e.target.value)}
-            placeholder="+919876543210"
+            id="verify-email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
           />
-          {errors["mobile"] ? <p className="text-sm text-destructive">{errors["mobile"]}</p> : null}
+          {errors["email"] ? <p className="text-sm text-destructive">{errors["email"]}</p> : null}
         </div>
 
         <div className="space-y-2">

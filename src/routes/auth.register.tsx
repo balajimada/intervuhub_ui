@@ -33,6 +33,7 @@ export const Route = createFileRoute("/auth/register")({
 
 function RegisterPage() {
   const navigate = useNavigate();
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [values, setValues] = useState({
     name: "",
     email: "",
@@ -45,13 +46,13 @@ function RegisterPage() {
   const [errors, setErrors] = useState<FieldErrors>({});
 
   const submit = useMutation({
-    mutationFn: (input: typeof values) => api.register(input),
+    mutationFn: (input: typeof values & { resumeFile: File | null }) =>
+      api.register({ ...input, resumeFile: input.resumeFile }),
     onSuccess: (res) => {
-      toast.success("Account created. Enter the code we sent to your mobile.", {
-        description: `Verification code: ${res.devOtp}`,
-        duration: 10000,
+      toast.success("Account created. Enter the code we sent to your email.", {
+        ...(res.devOtp ? { description: `Verification code: ${res.devOtp}`, duration: 10000 } : {}),
       });
-      navigate({ to: "/auth/verify", search: { mobile: res.mobile } });
+      navigate({ to: "/auth/verify", search: { email: res.email } });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Registration failed."),
   });
@@ -64,7 +65,7 @@ function RegisterPage() {
       return;
     }
     setErrors({});
-    submit.mutate(values);
+    submit.mutate({ ...values, resumeFile });
   };
 
   const field = (key: keyof typeof values) => ({
@@ -208,15 +209,18 @@ function RegisterPage() {
                   const file = e.target.files?.[0];
                   if (!file) {
                     setValues({ ...values, resumeName: "" });
+                    setResumeFile(null);
                     return;
                   }
                   if (file.size > 5 * 1024 * 1024) {
                     toast.error("Resume must be under 5 MB.");
                     e.target.value = "";
                     setValues({ ...values, resumeName: "" });
+                    setResumeFile(null);
                     return;
                   }
                   setValues({ ...values, resumeName: file.name });
+                  setResumeFile(file);
                 }}
               />
               <p className="text-xs text-muted-foreground">PDF or Word document, up to 5 MB.</p>

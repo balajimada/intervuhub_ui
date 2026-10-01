@@ -152,6 +152,11 @@ export interface Trainer {
   createdAt: string;
 }
 
+export interface ConsultationRating {
+  stars: number;
+  comment?: string | undefined;
+}
+
 export interface Consultation {
   id: string;
   trainerId: string;
@@ -164,4 +169,5 @@ export interface Consultation {
   preferredDate: string;
   status: ConsultationStatus;
   createdAt: string;
+  rating?: ConsultationRating | undefined;
 }

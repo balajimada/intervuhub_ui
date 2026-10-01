@@ -113,7 +113,7 @@ function requireUser(token?: string | null): StoredUser {
   const user = id ? db.users.find((u) => u.id === id) : undefined;
   if (!user) throw new ApiError(401, "Your session has expired. Please sign in again.");
   if (user.status === "Suspended") throw new ApiError(403, "Your account is suspended.");
-  if (user.status !== "Active") throw new ApiError(403, "Verify your mobile number to continue.");
+  if (user.status !== "Active") throw new ApiError(403, "Verify your email to continue.");
   return user;
 }
 
@@ -191,13 +191,13 @@ export function register(input: {
   };
   db.users.push(user);
   write(db);
-  return { mobile: user.mobile, devOtp: otp };
+  return { email: user.email, devOtp: otp };
 }
 
-export function verifyOtp(input: { mobile: string; code: string }) {
+export function verifyOtp(input: { email: string; code: string }) {
   const db = read();
-  const user = findByMobile(db.users, input.mobile);
-  if (!user) throw new ApiError(404, "No account found for this mobile number.");
+  const user = db.users.find((u) => u.email.toLowerCase() === input.email.trim().toLowerCase());
+  if (!user) throw new ApiError(404, "No account found for this email.");
   if (user.status === "Active") return { status: "Active" as const };
   if (user.otp !== input.code.trim()) throw new ApiError(400, "That code is not correct.");
   user.status = "Active";
@@ -206,10 +206,10 @@ export function verifyOtp(input: { mobile: string; code: string }) {
   return { status: "Active" as const };
 }
 
-export function resendOtp(input: { mobile: string }) {
+export function resendOtp(input: { email: string }) {
   const db = read();
-  const user = findByMobile(db.users, input.mobile);
-  if (!user) throw new ApiError(404, "No account found for this mobile number.");
+  const user = db.users.find((u) => u.email.toLowerCase() === input.email.trim().toLowerCase());
+  if (!user) throw new ApiError(404, "No account found for this email.");
   if (user.otpSentAt) {
     const elapsed = (Date.now() - new Date(user.otpSentAt).getTime()) / 1000;
     if (elapsed < OTP_COOLDOWN_SECONDS)
@@ -239,7 +239,7 @@ export function login(input: { identifier: string; password: string }): AuthResp
   if (!user || user.password !== input.password)
     throw new ApiError(401, "Incorrect credentials. Check your email/mobile and password.");
   if (user.status === "PendingActivation")
-    throw new ApiError(403, "Verify your mobile number to continue.");
+    throw new ApiError(403, "Verify your email to continue.");
   if (user.status === "Suspended")
     throw new ApiError(
       403,
@@ -409,7 +409,7 @@ export function createOpening(
     id: uid(),
     companyName: company.name,
     createdAt: created.toISOString(),
-    expiresAt: new Date(created.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+    expiresAt: new Date(created.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString(),
     authorId: user.id,
     authorName: user.name,
   };
@@ -657,6 +657,38 @@ export function confirmConsultation(token: string | null, id: string) {
   if (!booking) throw new ApiError(404, "Consultation not found.");
   if (booking.trainerId !== user.id) throw new ApiError(403, "Only the trainer can confirm this.");
   booking.status = "Confirmed";
+  write(db);
+  return booking;
+}
+
+export function completeConsultation(token: string | null, id: string) {
+  const user = requireUser(token);
+  const db = read();
+  const booking = db.consultations.find((c) => c.id === id);
+  if (!booking) throw new ApiError(404, "Consultation not found.");
+  if (booking.trainerId !== user.id) throw new ApiError(403, "Only the trainer can mark as completed.");
+  if (booking.status !== "Confirmed") throw new ApiError(400, "Consultation must be confirmed first.");
+  booking.status = "Completed";
+  write(db);
+  return booking;
+}
+
+export function rateConsultation(
+  token: string | null,
+  id: string,
+  input: { stars: number; comment?: string },
+) {
+  const user = requireUser(token);
+  const db = read();
+  const booking = db.consultations.find((c) => c.id === id);
+  if (!booking) throw new ApiError(404, "Consultation not found.");
+  if (booking.seekerId !== user.id) throw new ApiError(403, "Only the job seeker can rate this consultation.");
+  if (booking.status !== "Completed") throw new ApiError(400, "You can rate only after the consultation is completed.");
+  if (booking.rating) throw new ApiError(409, "You have already rated this consultation.");
+  booking.rating = {
+    stars: input.stars,
+    ...(input.comment ? { comment: input.comment } : {}),
+  };
   write(db);
   return booking;
 }
