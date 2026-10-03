@@ -9,8 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { BrandLogo } from "@/components/brand-logo";
-import { MultiSelect } from "@/components/multi-select";
-import { TECH_STACKS } from "@/lib/api/types";
+import { TrainerProfileFields } from "@/components/trainer-profile-fields";
 
 export const Route = createFileRoute("/auth/register")({
   head: () => ({
@@ -41,7 +40,8 @@ function RegisterPage() {
     password: "",
     role: "JobSeeker" as "JobSeeker" | "Trainer",
     skills: [] as string[],
-    resumeName: "" as string,
+    profileSummary: "",
+    resumeName: "",
   });
   const [errors, setErrors] = useState<FieldErrors>({});
 
@@ -50,7 +50,7 @@ function RegisterPage() {
       api.register({ ...input, resumeFile: input.resumeFile }),
     onSuccess: (res) => {
       toast.success("Account created. Enter the code we sent to your email.", {
-        ...(res.devOtp ? { description: `Verification code: ${res.devOtp}`, duration: 10000 } : {}),
+        ...(res.devOtp ? { description: ``, duration: 10000 } : {}),
       });
       navigate({ to: "/auth/verify", search: { email: res.email } });
     },
@@ -76,9 +76,7 @@ function RegisterPage() {
   return (
     <div className="mx-auto max-w-md px-4 py-10 sm:px-6">
       <div className="flex flex-col items-center text-center">
-        <Link to="/" aria-label="IntervuHub home">
-          <BrandLogo className="h-32 w-32 sm:h-40 sm:w-40" />
-        </Link>
+        
         <h1 className="mt-6 text-2xl font-bold">Create your account</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Reading is free — an account lets you post questions and openings.
@@ -184,55 +182,38 @@ function RegisterPage() {
         </fieldset>
 
         {values.role === "Trainer" ? (
-          <div className="space-y-5 rounded-lg border border-border p-4">
-            <p className="text-sm font-semibold">Trainer profile</p>
-            <div className="space-y-2">
-              <Label htmlFor="skills">Skills you train on</Label>
-              <MultiSelect
-                id="skills"
-                options={TECH_STACKS}
-                value={values.skills}
-                onChange={(skills) => setValues({ ...values, skills })}
-                placeholder="Select your skills"
-              />
-              {errors["skills"] ? (
-                <p className="text-sm text-destructive">{errors["skills"]}</p>
-              ) : null}
+          <div className="space-y-4 rounded-lg border border-border p-4">
+            <div>
+              <p className="text-sm font-semibold">Trainer profile</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                As a trainer you can also post questions, share openings and book other trainers,
+                just like a job seeker.
+              </p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="resume">Resume</Label>
-              <Input
-                id="resume"
-                type="file"
-                accept=".pdf,.doc,.docx"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) {
-                    setValues({ ...values, resumeName: "" });
-                    setResumeFile(null);
-                    return;
-                  }
-                  if (file.size > 5 * 1024 * 1024) {
-                    toast.error("Resume must be under 5 MB.");
-                    e.target.value = "";
-                    setValues({ ...values, resumeName: "" });
-                    setResumeFile(null);
-                    return;
-                  }
-                  setValues({ ...values, resumeName: file.name });
-                  setResumeFile(file);
-                }}
-              />
-              <p className="text-xs text-muted-foreground">PDF or Word document, up to 5 MB.</p>
-              {values.resumeName ? (
-                <p className="text-xs text-primary">Attached: {values.resumeName}</p>
-              ) : null}
-              {errors["resumeName"] ? (
-                <p className="text-sm text-destructive">{errors["resumeName"]}</p>
-              ) : null}
-            </div>
+            <TrainerProfileFields
+              value={values}
+              onChange={(patch) => setValues((v) => ({ ...v, ...patch }))}
+              onResumeFile={setResumeFile}
+              errors={errors}
+            />
           </div>
-        ) : null}
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            You can upgrade to a trainer account later from Account settings.
+          </p>
+        )}
+
+        <p className="text-xs text-muted-foreground">
+          By creating an account, you agree to our{" "}
+          <Link to="/terms" className="font-medium text-primary underline-offset-4 hover:underline">
+            Terms of Use
+          </Link>{" "}
+          and{" "}
+          <Link to="/privacy" className="font-medium text-primary underline-offset-4 hover:underline">
+            Privacy Policy
+          </Link>
+          , and confirm you are 18 or older.
+        </p>
 
         <Button type="submit" className="w-full" disabled={submit.isPending}>
           {submit.isPending ? "Creating account…" : "Create account"}
@@ -243,10 +224,6 @@ function RegisterPage() {
           <Link to="/auth/login" className="font-medium text-primary underline-offset-4 hover:underline">
             Sign in
           </Link>
-        </p>
-        <p className="rounded-md bg-secondary p-3 text-xs text-muted-foreground">
-          Moderator setup: registering with an address starting with <code>admin@</code> provisions
-          an Admin account with access to the moderation console.
         </p>
       </form>
     </div>

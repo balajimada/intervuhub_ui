@@ -1,5 +1,5 @@
 export type UserRole = "JobSeeker" | "Trainer" | "Admin";
-export type UserStatus = "PendingActivation" | "Active" | "Suspended";
+export type UserStatus = "PendingActivation" | "Active" | "Suspended" | "Deleted";
 
 export type ExperienceLevel = "Fresher" | "Junior" | "Senior" | "Architect";
 export type Difficulty = "Easy" | "Medium" | "Hard";
@@ -54,6 +54,9 @@ export interface User {
   suspensionReason?: string | undefined;
   suspendedUntil?: string | null | undefined;
   createdAt: string;
+  /** Present for trainers only. */
+  skills?: string[] | undefined;
+  profileSummary?: string | null | undefined;
 }
 
 export interface Company {
@@ -148,6 +151,7 @@ export interface Trainer {
   id: string;
   name: string;
   skills: string[];
+  profileSummary?: string | undefined;
   resumeName?: string | undefined;
   createdAt: string;
 }

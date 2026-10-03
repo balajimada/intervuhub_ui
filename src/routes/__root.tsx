@@ -8,11 +8,13 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { Mail } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/lib/auth";
 import { SiteHeader } from "@/components/site-header";
+import { SITE_NAME, SUPPORT_EMAIL } from "@/lib/site";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -125,6 +127,27 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+const FOOTER_GROUPS = [
+  {
+    title: "Explore",
+    links: [
+      { to: "/questions", label: "Questions" },
+      { to: "/openings", label: "Openings" },
+      { to: "/trainers", label: "Trainers" },
+      { to: "/consultations", label: "Consultations" },
+    ],
+  },
+  {
+    title: "Company",
+    links: [
+      { to: "/about", label: "About us" },
+      { to: "/contact", label: "Contact" },
+      { to: "/privacy", label: "Privacy Policy" },
+      { to: "/terms", label: "Terms of Use" },
+    ],
+  },
+] as const;
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
@@ -139,10 +162,40 @@ function RootComponent() {
           </main>
           <footer className="border-t py-8">
             <div className="mx-auto max-w-6xl px-4 text-sm text-muted-foreground sm:px-6">
-              <p className="font-display font-semibold text-foreground">IntervuHub</p>
-              <p className="mt-1 max-w-2xl">
-                Community-sourced interview content. Questions and openings are shared by job
-                seekers and are not verified by the companies mentioned.
+              <div className="grid gap-8 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-12">
+                <div className="min-w-0">
+                  <p className="font-display font-semibold text-foreground">{SITE_NAME}</p>
+                  <p className="mt-1 max-w-md">
+                    Community-sourced interview content. Questions and openings are shared by job
+                    seekers and are not verified by the companies mentioned.
+                  </p>
+                  <a
+                    href={`mailto:${SUPPORT_EMAIL}`}
+                    className="mt-3 inline-flex items-center gap-2 transition-colors hover:text-foreground"
+                  >
+                    <Mail className="h-4 w-4 text-primary" aria-hidden />
+                    {SUPPORT_EMAIL}
+                  </a>
+                </div>
+                {FOOTER_GROUPS.map((g) => (
+                  <nav key={g.title} aria-label={g.title}>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-foreground">
+                      {g.title}
+                    </p>
+                    <ul className="mt-3 space-y-2">
+                      {g.links.map((l) => (
+                        <li key={l.to}>
+                          <Link to={l.to} className="transition-colors hover:text-foreground">
+                            {l.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </nav>
+                ))}
+              </div>
+              <p className="mt-8 border-t border-border pt-6 text-xs">
+                © {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
               </p>
             </div>
           </footer>
