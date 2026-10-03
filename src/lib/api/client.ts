@@ -1,5 +1,6 @@
 import * as store from "./store";
 import { ApiError } from "./store";
+import type { User } from "./types";
 
 export { ApiError };
 
@@ -70,9 +71,21 @@ async function httpForm<T>(path: string, form: FormData): Promise<T> {
   return data as T;
 }
 
+interface TrainerProfileInput {
+  skills?: string[] | undefined;
+  profileSummary?: string | undefined;
+  resumeFile?: File | null | undefined;
+}
+
+function appendTrainerProfile(form: FormData, input: TrainerProfileInput) {
+  if (input.skills?.length) form.append("skills", input.skills.join(","));
+  if (input.profileSummary) form.append("profileSummary", input.profileSummary);
+  if (input.resumeFile) form.append("resume", input.resumeFile);
+}
+
 export const api = {
   /* auth */
-  register: (input: Parameters<typeof store.register>[0] & { resumeFile?: File | null }) => {
+  register: (input: Parameters<typeof store.register>[0] & TrainerProfileInput) => {
     if (BASE_URL) {
       const form = new FormData();
       form.append("name", input.name);
@@ -80,12 +93,23 @@ export const api = {
       form.append("mobile", input.mobile);
       form.append("password", input.password);
       form.append("role", input.role);
-      if (input.skills?.length) form.append("skills", input.skills.join(","));
-      if (input.resumeFile) form.append("resume", input.resumeFile);
+      if (input.role === "Trainer") appendTrainerProfile(form, input);
       return httpForm<{ email: string; devOtp?: string }>("/api/auth/register", form);
     }
     return call("POST", "/api/auth/register", () => store.register(input), input);
   },
+  becomeTrainer: (
+    input: { skills: string[]; profileSummary: string; resumeName: string } & TrainerProfileInput,
+  ) => {
+    if (BASE_URL) {
+      const form = new FormData();
+      appendTrainerProfile(form, input);
+      return httpForm<User>("/api/auth/become-trainer", form);
+    }
+    return call("POST", "/api/auth/become-trainer", () => store.becomeTrainer(authToken, input));
+  },
+  changePassword: (input: { currentPassword: string; newPassword: string }) =>
+    call("POST", "/api/auth/change-password", () => store.changePassword(authToken, input), input),
   verifyOtp: (input: { email: string; code: string }) =>
     call("POST", "/api/auth/verify-otp", () => store.verifyOtp(input), input),
   resendOtp: (input: { email: string }) =>
@@ -93,6 +117,8 @@ export const api = {
   login: (input: { identifier: string; password: string }) =>
     call("POST", "/api/auth/login", () => store.login(input), input),
   me: (token: string) => call("GET", "/api/auth/me", () => store.me(token)),
+  deleteAccount: (input: { password: string }) =>
+    call("POST", "/api/auth/delete-account", () => store.deleteAccount(authToken, input), input),
 
   /* companies */
   listCompanies: (q: Parameters<typeof store.listCompanies>[0]) =>
@@ -137,7 +163,7 @@ export const api = {
     call("POST", `/api/consultations/${id}/complete`, () =>
       store.completeConsultation(authToken, id),
     ),
-  rateConsultation: (id: string, input: { stars: number; comment?: string }) =>
+  rateConsultation: (id: string, input: { stars: number; comment?: string | undefined }) =>
     call("POST", `/api/consultations/${id}/rate`, () =>
       store.rateConsultation(authToken, id, input),
       input,

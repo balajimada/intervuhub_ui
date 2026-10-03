@@ -33,7 +33,6 @@ interface StoredUser extends User {
   password: string;
   otp?: string | undefined;
   otpSentAt?: string | undefined;
-  skills?: string[] | undefined;
   resumeName?: string | undefined;
 }
 
@@ -88,11 +87,23 @@ function publicUser(u: StoredUser): User {
     password: _password,
     otp: _otp,
     otpSentAt: _otpSentAt,
-    skills: _skills,
     resumeName: _resumeName,
+    skills,
+    profileSummary,
     ...rest
   } = u;
-  return rest;
+  return u.role === "Trainer" ? { ...rest, skills: skills ?? [], profileSummary } : rest;
+}
+
+function toTrainer(u: StoredUser): Trainer {
+  return {
+    id: u.id,
+    name: u.name,
+    skills: u.skills ?? [],
+    profileSummary: u.profileSummary ?? undefined,
+    resumeName: u.resumeName,
+    createdAt: u.createdAt,
+  };
 }
 
 function encodeToken(userId: string) {
@@ -163,6 +174,7 @@ export function register(input: {
   password: string;
   role: "JobSeeker" | "Trainer";
   skills?: string[];
+  profileSummary?: string;
   resumeName?: string;
 }) {
   const db = read();
@@ -171,8 +183,7 @@ export function register(input: {
   if (db.users.some((u) => u.mobile === input.mobile))
     throw new ApiError(409, "An account with this mobile number already exists.");
 
-  // Convenience rule for this build: an "admin…@" local part provisions the Admin console.
-  const role = /^admin([+._-][^@]*)?@/i.test(input.email.trim()) ? "Admin" : input.role;
+  const role = input.role;
   const otp = genOtp();
   const user: StoredUser = {
     id: uid(),
@@ -186,7 +197,11 @@ export function register(input: {
     otp,
     otpSentAt: now(),
     ...(input.role === "Trainer"
-      ? { skills: input.skills ?? [], resumeName: input.resumeName }
+      ? {
+          skills: input.skills ?? [],
+          profileSummary: input.profileSummary?.trim(),
+          resumeName: input.resumeName,
+        }
       : {}),
   };
   db.users.push(user);
@@ -256,6 +271,57 @@ export function me(token: string): User {
   const user = db.users.find((u) => u.id === id);
   if (!user) throw new ApiError(401, "Session expired.");
   return publicUser(user);
+}
+
+export function changePassword(
+  token: string | null,
+  input: { currentPassword: string; newPassword: string },
+) {
+  const user = requireUser(token);
+  if (user.password !== input.currentPassword) throw new ApiError(400, "Current password is incorrect.");
+  if (input.currentPassword === input.newPassword)
+    throw new ApiError(400, "New password must be different from your current password.");
+  const db = read();
+  const stored = db.users.find((u) => u.id === user.id)!;
+  stored.password = input.newPassword;
+  write(db);
+  return { changed: true as const };
+}
+
+export function becomeTrainer(
+  token: string | null,
+  input: { skills: string[]; profileSummary: string; resumeName: string },
+): User {
+  const user = requireUser(token);
+  if (user.role !== "JobSeeker") throw new ApiError(400, "Only job seeker accounts can upgrade to trainer.");
+  const db = read();
+  const stored = db.users.find((u) => u.id === user.id)!;
+  stored.role = "Trainer";
+  stored.skills = input.skills;
+  stored.profileSummary = input.profileSummary.trim();
+  stored.resumeName = input.resumeName;
+  write(db);
+  return publicUser(stored);
+}
+
+export function deleteAccount(token: string | null, input: { password: string }) {
+  const user = requireUser(token);
+  if (user.role === "Admin") throw new ApiError(403, "Admin accounts can't be deleted from here.");
+  if (user.password !== input.password) throw new ApiError(400, "Password is incorrect.");
+  const db = read();
+  db.users = db.users.filter((u) => u.id !== user.id);
+  db.openings = db.openings.filter((o) => o.authorId !== user.id);
+  db.questions = db.questions.map((q) =>
+    q.authorId === user.id ? { ...q, authorName: "Deleted user" } : q,
+  );
+  db.consultations = db.consultations.map((c) =>
+    (c.seekerId === user.id || c.trainerId === user.id) &&
+    (c.status === "Requested" || c.status === "Confirmed")
+      ? { ...c, status: "Cancelled" }
+      : c,
+  );
+  write(db);
+  return { deleted: true as const };
 }
 
 /* ------------------------------------------------------------- companies */
@@ -569,13 +635,7 @@ export function listTrainers(q: { search?: string; skills?: string[]; page?: num
   const db = read();
   let items: Trainer[] = db.users
     .filter((u) => u.role === "Trainer" && u.status === "Active")
-    .map((u) => ({
-      id: u.id,
-      name: u.name,
-      skills: u.skills ?? [],
-      resumeName: u.resumeName,
-      createdAt: u.createdAt,
-    }));
+    .map(toTrainer);
   if (q.search) {
     const s = q.search.toLowerCase();
     items = items.filter(
@@ -590,13 +650,7 @@ export function listTrainers(q: { search?: string; skills?: string[]; page?: num
 export function getTrainer(id: string): Trainer {
   const u = read().users.find((x) => x.id === id && x.role === "Trainer");
   if (!u) throw new ApiError(404, "Trainer not found.");
-  return {
-    id: u.id,
-    name: u.name,
-    skills: u.skills ?? [],
-    resumeName: u.resumeName,
-    createdAt: u.createdAt,
-  };
+  return toTrainer(u);
 }
 
 export function createConsultation(
@@ -613,6 +667,7 @@ export function createConsultation(
   const db = read();
   const trainer = db.users.find((u) => u.id === input.trainerId && u.role === "Trainer");
   if (!trainer) throw new ApiError(400, "Select a trainer to book with.");
+  if (trainer.id === user.id) throw new ApiError(400, "You can't book a consultation with yourself.");
   const booking: Consultation = {
     id: uid(),
     trainerId: trainer.id,
@@ -676,7 +731,7 @@ export function completeConsultation(token: string | null, id: string) {
 export function rateConsultation(
   token: string | null,
   id: string,
-  input: { stars: number; comment?: string },
+  input: { stars: number; comment?: string | undefined },
 ) {
   const user = requireUser(token);
   const db = read();

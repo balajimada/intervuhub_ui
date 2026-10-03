@@ -10,25 +10,55 @@ export const passwordSchema = z
   .regex(/[a-z]/, "Include at least one lowercase letter.")
   .regex(/\d/, "Include at least one number.");
 
-export const registerSchema = z
-  .object({
-  name: z.string().trim().min(2, "Name must be at least 2 characters.").max(80, "Name is too long."),
-  email: z.string().trim().email("Enter a valid email address.").max(255),
-  mobile: z
+export const PROFILE_SUMMARY_MIN = 30;
+export const PROFILE_SUMMARY_MAX = 1000;
+
+export const trainerProfileSchema = z.object({
+  skills: z
+    .array(z.string())
+    .min(1, "Select at least one skill you train on.")
+    .max(10, "Pick up to 10 skills."),
+  profileSummary: z
     .string()
     .trim()
-    .regex(E164_INDIA, "Enter a valid Indian mobile in E.164 format, e.g. +919876543210."),
-  password: passwordSchema,
+    .min(PROFILE_SUMMARY_MIN, `Write at least ${PROFILE_SUMMARY_MIN} characters about your experience.`)
+    .max(PROFILE_SUMMARY_MAX, `Keep it under ${PROFILE_SUMMARY_MAX} characters.`),
+  resumeName: z.string().trim().min(1, "Upload your resume (PDF or DOC, up to 5 MB).").max(200),
+});
+
+export const registerSchema = z
+  .object({
+    name: z.string().trim().min(2, "Name must be at least 2 characters.").max(80, "Name is too long."),
+    email: z.string().trim().email("Enter a valid email address.").max(255),
+    mobile: z
+      .string()
+      .trim()
+      .regex(E164_INDIA, "Enter a valid Indian mobile in E.164 format, e.g. +919876543210."),
+    password: passwordSchema,
     role: z.enum(["JobSeeker", "Trainer"]),
-    skills: z.array(z.string()).max(10, "Pick up to 10 skills.").default([]),
-    resumeName: z.string().trim().max(200).optional(),
+    skills: z.array(z.string()).default([]),
+    profileSummary: z.string().default(""),
+    resumeName: z.string().default(""),
   })
   .superRefine((v, ctx) => {
     if (v.role !== "Trainer") return;
-    if (v.skills.length < 1)
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["skills"], message: "Select at least one skill you train on." });
-    if (!v.resumeName)
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["resumeName"], message: "Upload your resume (PDF or DOC, up to 5 MB)." });
+    const trainer = trainerProfileSchema.safeParse(v);
+    if (!trainer.success) trainer.error.issues.forEach((issue) => ctx.addIssue(issue));
+  });
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Enter your current password."),
+    newPassword: passwordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((v) => v.newPassword === v.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Passwords don't match.",
+  })
+  .refine((v) => v.newPassword !== v.currentPassword, {
+    path: ["newPassword"],
+    message: "Choose a password different from your current one.",
   });
 
 export const consultationSchema = z.object({
