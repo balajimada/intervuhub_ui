@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { LogOut, Menu, Shield, User as UserIcon } from "lucide-react";
+import { LogOut, Menu, Settings, Shield, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
@@ -110,6 +110,12 @@ export function SiteHeader() {
                       </Link>
                     </DropdownMenuItem>
                   ) : null}
+                  <DropdownMenuItem asChild>
+                    <Link to="/account">
+                      <Settings className="mr-2 h-4 w-4" aria-hidden />
+                      Account settings
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onSelect={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" aria-hidden />
                     Sign out
@@ -176,6 +182,11 @@ export function SiteHeader() {
                     <Button asChild className="w-full">
                       <Link to="/openings/new" onClick={() => setOpen(false)}>
                         Post opening
+                      </Link>
+                    </Button>
+                    <Button asChild variant="ghost" className="w-full">
+                      <Link to="/account" onClick={() => setOpen(false)}>
+                        Account settings
                       </Link>
                     </Button>
                     <Button variant="ghost" className="w-full" onClick={handleSignOut}>

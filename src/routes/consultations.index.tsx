@@ -149,7 +149,7 @@ function ConsultationsPage() {
   });
 
   const rate = useMutation({
-    mutationFn: (input: { id: string; stars: number; comment?: string }) =>
+    mutationFn: (input: { id: string; stars: number; comment?: string | undefined }) =>
       api.rateConsultation(input.id, { stars: input.stars, comment: input.comment }),
     onSuccess: () => {
       toast.success("Thanks for your feedback.");
@@ -259,7 +259,7 @@ function ConsultationsPage() {
                     <SelectValue placeholder="Choose a trainer" />
                   </SelectTrigger>
                   <SelectContent>
-                    {(trainers.data?.items ?? []).map((t) => (
+                    {(trainers.data?.items ?? []).filter((t) => t.id !== user?.id).map((t) => (
                       <SelectItem key={t.id} value={t.id}>
                         {t.name}
                         {t.skills.length ? ` — ${t.skills.slice(0, 3).join(", ")}` : ""}

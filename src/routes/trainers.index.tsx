@@ -11,8 +11,9 @@ import {
   Users,
 } from "lucide-react";
 import { api } from "@/lib/api/client";
+import { useAuth } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonProps } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -61,6 +62,22 @@ const WHAT_THEY_DO = [
   },
 ];
 
+function BecomeTrainerButton(props: Omit<ButtonProps, "asChild">) {
+  const { user } = useAuth();
+  if (user && user.role !== "JobSeeker") return null;
+  return (
+    <Button asChild {...props}>
+      {user ? (
+        <Link to="/account" hash="become-trainer">
+          Become a trainer
+        </Link>
+      ) : (
+        <Link to="/auth/register">Become a trainer</Link>
+      )}
+    </Button>
+  );
+}
+
 function TrainersPage() {
   const [search, setSearch] = useState("");
   const trainers = useQuery({
@@ -95,9 +112,7 @@ function TrainersPage() {
               Book a consultation
             </Link>
           </Button>
-          <Button asChild size="lg" variant="outline">
-            <Link to="/auth/register">Become a trainer</Link>
-          </Button>
+          <BecomeTrainerButton size="lg" variant="outline" />
         </div>
       </header>
 
@@ -167,6 +182,9 @@ function TrainersPage() {
                       </p>
                     </div>
                   </div>
+                  {t.profileSummary ? (
+                    <p className="line-clamp-4 text-xs text-muted-foreground">{t.profileSummary}</p>
+                  ) : null}
                   {t.skills.length ? (
                     <div className="flex flex-wrap gap-1.5">
                       {t.skills.slice(0, 6).map((s) => (
@@ -194,9 +212,7 @@ function TrainersPage() {
                   ? "No trainer matches that search yet."
                   : "No trainers have joined yet. If you work in IT, create a trainer account with your skills and resume to start helping job seekers."}
               </p>
-              <Button asChild className="mt-4">
-                <Link to="/auth/register">Become a trainer</Link>
-              </Button>
+              <BecomeTrainerButton className="mt-4" />
             </div>
           )}
         </div>
