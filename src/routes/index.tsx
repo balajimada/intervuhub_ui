@@ -15,6 +15,7 @@ import {
 import { api } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth";
 import { relativeFromNow } from "@/lib/format";
+import { FormattedText } from "@/components/formatted-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -294,7 +295,7 @@ function Home() {
                     params={{ questionId: q.id }}
                     className="hover:underline"
                   >
-                    {q.questionText}
+                    <FormattedText text={q.questionText} preview />
                   </Link>
                 </h3>
                 <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">

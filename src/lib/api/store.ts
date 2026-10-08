@@ -401,21 +401,24 @@ export function getQuestion(id: string) {
   return q;
 }
 
-export function createQuestion(
-  token: string | null,
-  input: Omit<
-    InterviewQuestion,
-    "id" | "createdAt" | "authorId" | "authorName" | "isHidden" | "companyName"
-  >,
-) {
+export type QuestionInput = Omit<
+  InterviewQuestion,
+  "id" | "createdAt" | "authorId" | "authorName" | "isHidden" | "companyName"
+>;
+
+function companyNameFor(db: Db, companyId: string) {
+  const company = db.companies.find((c) => c.id === companyId);
+  if (!company) throw new ApiError(400, "Select a valid company.");
+  return company.name;
+}
+
+export function createQuestion(token: string | null, input: QuestionInput) {
   const user = requireUser(token);
   const db = read();
-  const company = db.companies.find((c) => c.id === input.companyId);
-  if (!company) throw new ApiError(400, "Select a valid company.");
   const question: InterviewQuestion = {
     ...input,
     id: uid(),
-    companyName: company.name,
+    companyName: companyNameFor(db, input.companyId),
     isHidden: false,
     createdAt: now(),
     authorId: user.id,
@@ -424,6 +427,41 @@ export function createQuestion(
   db.questions.push(question);
   write(db);
   return question;
+}
+
+export function updateQuestion(token: string | null, id: string, input: QuestionInput) {
+  const user = requireUser(token);
+  const db = read();
+  const index = db.questions.findIndex((q) => q.id === id);
+  const existing = db.questions[index];
+  if (!existing) throw new ApiError(404, "Question not found.");
+  if (existing.authorId !== user.id)
+    throw new ApiError(403, "You can only edit questions you posted.");
+  const { id: _id, createdAt, authorId, authorName, isHidden } = existing;
+  const updated: InterviewQuestion = {
+    ...input,
+    id: _id,
+    createdAt,
+    authorId,
+    authorName,
+    isHidden,
+    companyName: companyNameFor(db, input.companyId),
+  };
+  db.questions[index] = updated;
+  write(db);
+  return updated;
+}
+
+export function deleteQuestion(token: string | null, id: string) {
+  const user = requireUser(token);
+  const db = read();
+  const question = db.questions.find((q) => q.id === id);
+  if (!question) throw new ApiError(404, "Question not found.");
+  if (question.authorId !== user.id && user.role !== "Admin")
+    throw new ApiError(403, "You can only delete questions you posted.");
+  db.questions = db.questions.filter((q) => q.id !== id);
+  write(db);
+  return { deleted: true };
 }
 
 /* -------------------------------------------------------------- openings */

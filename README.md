@@ -96,7 +96,7 @@ Global auth state (logged-in user, role, token) available app-wide; redirect una
 
 2. Interview questions
 
-Search/browse page: filters for company (typeahead search), tech stack (multi-select), experience level (Fresher/Junior/Senior/Architect), role/title, round. Paginated results list.
+Search/browse page: filters for company (typeahead search), tech stack (multi-select), experience level (Fresher/Junior/Mid Level/Senior/Architect/Full Stack), role/title, round. Paginated results list.
 
 Question detail view: grouped/labeled by round, shows notes/difficulty/interview date if present.
 
