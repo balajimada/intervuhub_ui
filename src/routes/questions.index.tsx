@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, Layers, Plus, User } from "lucide-react";
+import { CalendarDays, Layers, Pencil, Plus, User } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth";
 import { relativeFromNow } from "@/lib/format";
 import { FilterBar, emptyFilters, hasActiveFilters, type Filters } from "@/components/filter-bar";
+import { FormattedText } from "@/components/formatted-text";
 import { ReportButton } from "@/components/report-dialog";
 import { Pager } from "@/components/pager";
 import { EmptyState, ErrorState, ListSkeleton } from "@/components/states";
@@ -32,7 +33,7 @@ export const Route = createFileRoute("/questions/")({
 });
 
 function QuestionsPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [filters, setFilters] = useState<Filters>({ ...emptyFilters });
   const [page, setPage] = useState(1);
 
@@ -119,7 +120,7 @@ function QuestionsPage() {
                   params={{ questionId: q.id }}
                   className="hover:underline"
                 >
-                  {q.questionText}
+                  <FormattedText text={q.questionText} preview />
                 </Link>
               </h2>
               <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
@@ -144,7 +145,16 @@ function QuestionsPage() {
                 >
                   View details
                 </Link>
-                <ReportButton targetType="Question" targetId={q.id} />
+                {q.authorId === user?.id ? (
+                  <Button asChild size="sm" variant="ghost">
+                    <Link to="/questions/$questionId/edit" params={{ questionId: q.id }}>
+                      <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                      Edit
+                    </Link>
+                  </Button>
+                ) : (
+                  <ReportButton targetType="Question" targetId={q.id} />
+                )}
               </div>
             </article>
           ))}

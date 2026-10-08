@@ -132,8 +132,17 @@ export const api = {
     call("GET", `/api/interview-questions${qs(f)}`, () => store.listQuestions(f)),
   getQuestion: (id: string) =>
     call("GET", `/api/interview-questions/${id}`, () => store.getQuestion(id)),
-  createQuestion: (input: Parameters<typeof store.createQuestion>[1]) =>
+  createQuestion: (input: store.QuestionInput) =>
     call("POST", "/api/interview-questions", () => store.createQuestion(authToken, input), input),
+  updateQuestion: (id: string, input: store.QuestionInput) =>
+    call(
+      "PUT",
+      `/api/interview-questions/${id}`,
+      () => store.updateQuestion(authToken, id, input),
+      input,
+    ),
+  deleteQuestion: (id: string) =>
+    call("DELETE", `/api/interview-questions/${id}`, () => store.deleteQuestion(authToken, id)),
 
   /* openings */
   listOpenings: (f: store.OpeningFilters) =>

@@ -1,4 +1,12 @@
 import { z } from "zod";
+import { EXPERIENCE_LEVELS } from "@/lib/api/types";
+
+export const QUESTION_TEXT_MAX = 3000;
+export const QUESTION_NOTES_MAX = 2000;
+
+const experienceLevelSchema = z.enum(EXPERIENCE_LEVELS, {
+  errorMap: () => ({ message: "Select an experience level." }),
+});
 
 export const E164_INDIA = /^\+91[6-9]\d{9}$/;
 
@@ -93,9 +101,7 @@ export const ratingSchema = z.object({
 export const questionSchema = z.object({
   companyId: z.string().min(1, "Pick a company."),
   techStack: z.array(z.string()).min(1, "Select at least one tech stack.").max(6, "Pick up to 6."),
-  experienceLevel: z.enum(["Fresher", "Junior", "Senior", "Architect"], {
-    errorMap: () => ({ message: "Select an experience level." }),
-  }),
+  experienceLevel: experienceLevelSchema,
   role: z.string().trim().min(2, "Role must be at least 2 characters.").max(80, "Role is too long."),
   round: z.enum(["Screening", "Technical", "Coding", "System Design", "Managerial", "HR"], {
     errorMap: () => ({ message: "Select the interview round." }),
@@ -104,8 +110,12 @@ export const questionSchema = z.object({
     .string()
     .trim()
     .min(15, "Question must be at least 15 characters.")
-    .max(1000, "Question must be under 1000 characters."),
-  notes: z.string().trim().max(2000, "Notes must be under 2000 characters.").optional(),
+    .max(QUESTION_TEXT_MAX, `Question must be under ${QUESTION_TEXT_MAX} characters.`),
+  notes: z
+    .string()
+    .trim()
+    .max(QUESTION_NOTES_MAX, `Notes must be under ${QUESTION_NOTES_MAX} characters.`)
+    .optional(),
   difficulty: z.enum(["Easy", "Medium", "Hard"]).optional(),
   interviewYear: z
     .number()
@@ -120,9 +130,7 @@ export const openingSchema = z.object({
   companyId: z.string().min(1, "Pick a company."),
   techStack: z.array(z.string()).min(1, "Select at least one tech stack.").max(6, "Pick up to 6."),
   role: z.string().trim().min(2, "Role must be at least 2 characters.").max(80, "Role is too long."),
-  experienceLevel: z.enum(["Fresher", "Junior", "Senior", "Architect"], {
-    errorMap: () => ({ message: "Select an experience level." }),
-  }),
+  experienceLevel: experienceLevelSchema,
   location: z.string().trim().max(80, "Location is too long.").optional(),
   mode: z.enum(["Onsite", "Hybrid", "Remote"]).optional(),
   notes: z.string().trim().max(1000, "Notes must be under 1000 characters.").optional(),

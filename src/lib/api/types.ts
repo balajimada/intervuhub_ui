@@ -1,7 +1,15 @@
 export type UserRole = "JobSeeker" | "Trainer" | "Admin";
 export type UserStatus = "PendingActivation" | "Active" | "Suspended" | "Deleted";
 
-export type ExperienceLevel = "Fresher" | "Junior" | "Senior" | "Architect";
+export const EXPERIENCE_LEVELS = [
+  "Fresher",
+  "Junior",
+  "Mid Level",
+  "Senior",
+  "Architect",
+  "Full Stack",
+] as const;
+export type ExperienceLevel = (typeof EXPERIENCE_LEVELS)[number];
 export type Difficulty = "Easy" | "Medium" | "Hard";
 export type InterviewRound =
   | "Screening"
@@ -15,7 +23,6 @@ export type CompanyStatus = "Pending" | "Approved" | "Rejected";
 export type ReportTargetType = "Company" | "Question" | "Opening" | "User";
 export type ReportStatus = "Open" | "Resolved";
 
-export const EXPERIENCE_LEVELS: ExperienceLevel[] = ["Fresher", "Junior", "Senior", "Architect"];
 export const DIFFICULTIES: Difficulty[] = ["Easy", "Medium", "Hard"];
 export const ROUNDS: InterviewRound[] = [
   "Screening",

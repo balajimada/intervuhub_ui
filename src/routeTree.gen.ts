@@ -28,6 +28,7 @@ import { Route as QuestionsIndexRouteImport } from './routes/questions.index'
 import { Route as QuestionsQuestionIdRouteImport } from './routes/questions.$questionId'
 import { Route as QuestionsNewRouteImport } from './routes/questions.new'
 import { Route as TrainersIndexRouteImport } from './routes/trainers.index'
+import { Route as QuestionsQuestionIdEditRouteImport } from './routes/questions.$questionId_.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -124,6 +125,11 @@ const TrainersIndexRoute = TrainersIndexRouteImport.update({
   path: '/trainers/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QuestionsQuestionIdEditRoute = QuestionsQuestionIdEditRouteImport.update({
+  id: '/questions/$questionId_/edit',
+  path: '/questions/$questionId/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -145,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/openings/': typeof OpeningsIndexRoute
   '/questions/': typeof QuestionsIndexRoute
   '/trainers/': typeof TrainersIndexRoute
+  '/questions/$questionId/edit': typeof QuestionsQuestionIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -166,6 +173,7 @@ export interface FileRoutesByTo {
   '/openings': typeof OpeningsIndexRoute
   '/questions': typeof QuestionsIndexRoute
   '/trainers': typeof TrainersIndexRoute
+  '/questions/$questionId/edit': typeof QuestionsQuestionIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -188,6 +196,7 @@ export interface FileRoutesById {
   '/openings/': typeof OpeningsIndexRoute
   '/questions/': typeof QuestionsIndexRoute
   '/trainers/': typeof TrainersIndexRoute
+  '/questions/$questionId_/edit': typeof QuestionsQuestionIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -211,6 +220,7 @@ export interface FileRouteTypes {
     | '/openings/'
     | '/questions/'
     | '/trainers/'
+    | '/questions/$questionId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -232,6 +242,7 @@ export interface FileRouteTypes {
     | '/openings'
     | '/questions'
     | '/trainers'
+    | '/questions/$questionId/edit'
   id:
     | '__root__'
     | '/'
@@ -253,6 +264,7 @@ export interface FileRouteTypes {
     | '/openings/'
     | '/questions/'
     | '/trainers/'
+    | '/questions/$questionId_/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -275,6 +287,7 @@ export interface RootRouteChildren {
   OpeningsIndexRoute: typeof OpeningsIndexRoute
   QuestionsIndexRoute: typeof QuestionsIndexRoute
   TrainersIndexRoute: typeof TrainersIndexRoute
+  QuestionsQuestionIdEditRoute: typeof QuestionsQuestionIdEditRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -412,6 +425,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TrainersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/questions/$questionId_/edit': {
+      id: '/questions/$questionId_/edit'
+      path: '/questions/$questionId/edit'
+      fullPath: '/questions/$questionId/edit'
+      preLoaderRoute: typeof QuestionsQuestionIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -435,6 +455,7 @@ const rootRouteChildren: RootRouteChildren = {
   OpeningsIndexRoute: OpeningsIndexRoute,
   QuestionsIndexRoute: QuestionsIndexRoute,
   TrainersIndexRoute: TrainersIndexRoute,
+  QuestionsQuestionIdEditRoute: QuestionsQuestionIdEditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
