@@ -1,8 +1,11 @@
 import { z } from "zod";
-import { EXPERIENCE_LEVELS } from "@/lib/api/types";
+import { EXPERIENCE_LEVELS, TESTIMONIAL_OUTCOMES } from "@/lib/api/types";
 
 export const QUESTION_TEXT_MAX = 3000;
 export const QUESTION_NOTES_MAX = 2000;
+export const OPENING_NOTES_MAX = 1000;
+export const TESTIMONIAL_MIN = 20;
+export const TESTIMONIAL_MAX = 600;
 
 const experienceLevelSchema = z.enum(EXPERIENCE_LEVELS, {
   errorMap: () => ({ message: "Select an experience level." }),
@@ -133,11 +136,32 @@ export const openingSchema = z.object({
   experienceLevel: experienceLevelSchema,
   location: z.string().trim().max(80, "Location is too long.").optional(),
   mode: z.enum(["Onsite", "Hybrid", "Remote"]).optional(),
-  notes: z.string().trim().max(1000, "Notes must be under 1000 characters.").optional(),
-  link: z.string().trim().url("Enter a valid URL (including https://).").max(300).optional(),
+  notes: z
+    .string()
+    .trim()
+    .max(OPENING_NOTES_MAX, `Notes must be under ${OPENING_NOTES_MAX} characters.`)
+    .optional(),
+  link: z
+    .string()
+    .trim()
+    .url("Enter a valid URL (including https://).")
+    .regex(/^https?:\/\//i, "Link must start with http:// or https://.")
+    .max(300)
+    .optional(),
   sourceType: z.enum(["IWorkHere", "KnownOpening"], {
     errorMap: () => ({ message: "Select where this came from." }),
   }),
+});
+
+export const testimonialSchema = z.object({
+  outcome: z.enum(TESTIMONIAL_OUTCOMES, {
+    errorMap: () => ({ message: "Tell us how it helped." }),
+  }),
+  message: z
+    .string()
+    .trim()
+    .min(TESTIMONIAL_MIN, `Write at least ${TESTIMONIAL_MIN} characters.`)
+    .max(TESTIMONIAL_MAX, `Keep it under ${TESTIMONIAL_MAX} characters.`),
 });
 
 export const suspendSchema = z.object({

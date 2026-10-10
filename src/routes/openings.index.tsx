@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Clock, ExternalLink, MapPin, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, Clock, ExternalLink, MapPin, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth";
@@ -186,7 +186,16 @@ function OpeningsPage() {
                       </a>
                     </Button>
                   ) : null}
-                  {isAuthenticated ? <ReportButton targetType="Opening" targetId={o.id} /> : null}
+                  {user?.id === o.authorId ? (
+                    <Button asChild size="sm" variant="ghost">
+                      <Link to="/openings/$openingId/edit" params={{ openingId: o.id }}>
+                        <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                        Edit
+                      </Link>
+                    </Button>
+                  ) : isAuthenticated ? (
+                    <ReportButton targetType="Opening" targetId={o.id} />
+                  ) : null}
                   {canDelete ? (
                     <Button
                       size="sm"

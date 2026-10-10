@@ -136,6 +136,7 @@ const FOOTER_GROUPS = [
       { to: "/openings", label: "Openings" },
       { to: "/trainers", label: "Trainers" },
       { to: "/consultations", label: "Consultations" },
+      { to: "/testimonials", label: "Success stories" },
     ],
   },
   {

@@ -8,6 +8,7 @@ import { formatDate, monthName, relativeFromNow } from "@/lib/format";
 import { FormattedText } from "@/components/formatted-text";
 import { ReportButton } from "@/components/report-dialog";
 import { ErrorState, LoadingBlock } from "@/components/states";
+import { PostTestimonials } from "@/components/testimonials";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -180,6 +181,8 @@ function QuestionDetail() {
           </div>
         </article>
       ) : null}
+
+      {q ? <PostTestimonials targetType="Question" targetId={q.id} isAuthor={isAuthor} /> : null}
     </div>
   );
 }

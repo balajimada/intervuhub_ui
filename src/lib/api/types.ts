@@ -113,6 +113,29 @@ export interface InterviewOpening {
   authorName: string;
 }
 
+export type TestimonialTargetType = "Question" | "Opening" | "General";
+export type TestimonialStatus = "Pending" | "Approved" | "Rejected";
+export const TESTIMONIAL_OUTCOMES = [
+  "Got the job",
+  "Cleared the interview",
+  "Better prepared",
+] as const;
+export type TestimonialOutcome = (typeof TESTIMONIAL_OUTCOMES)[number];
+
+export interface Testimonial {
+  id: string;
+  /** First name and last initial only, e.g. "Priya S.". */
+  authorName: string;
+  targetType: TestimonialTargetType;
+  /** Missing for general feedback or when the post it mentions has been deleted. */
+  targetId?: string | undefined;
+  targetLabel: string;
+  outcome: TestimonialOutcome;
+  message: string;
+  status: TestimonialStatus;
+  createdAt: string;
+}
+
 export interface ContentReport {
   id: string;
   targetType: ReportTargetType;

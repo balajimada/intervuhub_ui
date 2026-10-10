@@ -15,6 +15,7 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as TestimonialsRouteImport } from './routes/testimonials'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
 import { Route as AuthRegisterRouteImport } from './routes/auth.register'
@@ -28,6 +29,7 @@ import { Route as QuestionsIndexRouteImport } from './routes/questions.index'
 import { Route as QuestionsQuestionIdRouteImport } from './routes/questions.$questionId'
 import { Route as QuestionsNewRouteImport } from './routes/questions.new'
 import { Route as TrainersIndexRouteImport } from './routes/trainers.index'
+import { Route as OpeningsOpeningIdEditRouteImport } from './routes/openings.$openingId_.edit'
 import { Route as QuestionsQuestionIdEditRouteImport } from './routes/questions.$questionId_.edit'
 
 const IndexRoute = IndexRouteImport.update({
@@ -58,6 +60,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TestimonialsRoute = TestimonialsRouteImport.update({
+  id: '/testimonials',
+  path: '/testimonials',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -125,6 +132,11 @@ const TrainersIndexRoute = TrainersIndexRouteImport.update({
   path: '/trainers/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OpeningsOpeningIdEditRoute = OpeningsOpeningIdEditRouteImport.update({
+  id: '/openings/$openingId_/edit',
+  path: '/openings/$openingId/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QuestionsQuestionIdEditRoute = QuestionsQuestionIdEditRouteImport.update({
   id: '/questions/$questionId_/edit',
   path: '/questions/$questionId/edit',
@@ -138,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/testimonials': typeof TestimonialsRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -151,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/openings/': typeof OpeningsIndexRoute
   '/questions/': typeof QuestionsIndexRoute
   '/trainers/': typeof TrainersIndexRoute
+  '/openings/$openingId/edit': typeof OpeningsOpeningIdEditRoute
   '/questions/$questionId/edit': typeof QuestionsQuestionIdEditRoute
 }
 export interface FileRoutesByTo {
@@ -160,6 +174,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/testimonials': typeof TestimonialsRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -173,6 +188,7 @@ export interface FileRoutesByTo {
   '/openings': typeof OpeningsIndexRoute
   '/questions': typeof QuestionsIndexRoute
   '/trainers': typeof TrainersIndexRoute
+  '/openings/$openingId/edit': typeof OpeningsOpeningIdEditRoute
   '/questions/$questionId/edit': typeof QuestionsQuestionIdEditRoute
 }
 export interface FileRoutesById {
@@ -183,6 +199,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/testimonials': typeof TestimonialsRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -196,6 +213,7 @@ export interface FileRoutesById {
   '/openings/': typeof OpeningsIndexRoute
   '/questions/': typeof QuestionsIndexRoute
   '/trainers/': typeof TrainersIndexRoute
+  '/openings/$openingId_/edit': typeof OpeningsOpeningIdEditRoute
   '/questions/$questionId_/edit': typeof QuestionsQuestionIdEditRoute
 }
 export interface FileRouteTypes {
@@ -207,6 +225,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/privacy'
     | '/terms'
+    | '/testimonials'
     | '/auth/login'
     | '/auth/register'
     | '/auth/verify'
@@ -220,6 +239,7 @@ export interface FileRouteTypes {
     | '/openings/'
     | '/questions/'
     | '/trainers/'
+    | '/openings/$openingId/edit'
     | '/questions/$questionId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -229,6 +249,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/privacy'
     | '/terms'
+    | '/testimonials'
     | '/auth/login'
     | '/auth/register'
     | '/auth/verify'
@@ -242,6 +263,7 @@ export interface FileRouteTypes {
     | '/openings'
     | '/questions'
     | '/trainers'
+    | '/openings/$openingId/edit'
     | '/questions/$questionId/edit'
   id:
     | '__root__'
@@ -251,6 +273,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/privacy'
     | '/terms'
+    | '/testimonials'
     | '/auth/login'
     | '/auth/register'
     | '/auth/verify'
@@ -264,6 +287,7 @@ export interface FileRouteTypes {
     | '/openings/'
     | '/questions/'
     | '/trainers/'
+    | '/openings/$openingId_/edit'
     | '/questions/$questionId_/edit'
   fileRoutesById: FileRoutesById
 }
@@ -274,6 +298,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
+  TestimonialsRoute: typeof TestimonialsRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
@@ -287,6 +312,7 @@ export interface RootRouteChildren {
   OpeningsIndexRoute: typeof OpeningsIndexRoute
   QuestionsIndexRoute: typeof QuestionsIndexRoute
   TrainersIndexRoute: typeof TrainersIndexRoute
+  OpeningsOpeningIdEditRoute: typeof OpeningsOpeningIdEditRoute
   QuestionsQuestionIdEditRoute: typeof QuestionsQuestionIdEditRoute
 }
 
@@ -332,6 +358,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/testimonials': {
+      id: '/testimonials'
+      path: '/testimonials'
+      fullPath: '/testimonials'
+      preLoaderRoute: typeof TestimonialsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -425,6 +458,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TrainersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/openings/$openingId_/edit': {
+      id: '/openings/$openingId_/edit'
+      path: '/openings/$openingId/edit'
+      fullPath: '/openings/$openingId/edit'
+      preLoaderRoute: typeof OpeningsOpeningIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/questions/$questionId_/edit': {
       id: '/questions/$questionId_/edit'
       path: '/questions/$questionId/edit'
@@ -442,6 +482,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
+  TestimonialsRoute: TestimonialsRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
   AuthVerifyRoute: AuthVerifyRoute,
@@ -455,6 +496,7 @@ const rootRouteChildren: RootRouteChildren = {
   OpeningsIndexRoute: OpeningsIndexRoute,
   QuestionsIndexRoute: QuestionsIndexRoute,
   TrainersIndexRoute: TrainersIndexRoute,
+  OpeningsOpeningIdEditRoute: OpeningsOpeningIdEditRoute,
   QuestionsQuestionIdEditRoute: QuestionsQuestionIdEditRoute,
 }
 export const routeTree = rootRouteImport

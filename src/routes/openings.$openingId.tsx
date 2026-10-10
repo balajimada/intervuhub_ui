@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Clock, ExternalLink, MapPin, Trash2 } from "lucide-react";
+import { ArrowLeft, Clock, ExternalLink, MapPin, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth";
 import { daysUntil, formatDate, relativeFromNow } from "@/lib/format";
 import { ReportButton } from "@/components/report-dialog";
 import { ErrorState, LoadingBlock } from "@/components/states";
+import { PostTestimonials } from "@/components/testimonials";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,7 +50,8 @@ function OpeningDetailPage() {
   });
 
   const o = query.data;
-  const canDelete = !!o && (isAdmin || user?.id === o.authorId);
+  const isAuthor = !!o && user?.id === o.authorId;
+  const canDelete = isAuthor || (!!o && isAdmin);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
@@ -128,7 +130,16 @@ function OpeningDetailPage() {
                 </a>
               </Button>
             ) : null}
-            {isAuthenticated ? <ReportButton targetType="Opening" targetId={o.id} /> : null}
+            {isAuthor ? (
+              <Button asChild size="sm" variant="outline">
+                <Link to="/openings/$openingId/edit" params={{ openingId: o.id }}>
+                  <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                  Edit
+                </Link>
+              </Button>
+            ) : isAuthenticated ? (
+              <ReportButton targetType="Opening" targetId={o.id} />
+            ) : null}
             {canDelete ? (
               <Button
                 size="sm"
@@ -144,6 +155,8 @@ function OpeningDetailPage() {
           </div>
         </article>
       ) : null}
+
+      {o ? <PostTestimonials targetType="Opening" targetId={o.id} isAuthor={isAuthor} /> : null}
     </div>
   );
 }
