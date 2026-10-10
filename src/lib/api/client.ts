@@ -1,6 +1,6 @@
 import * as store from "./store";
 import { ApiError } from "./store";
-import type { User } from "./types";
+import type { TestimonialStatus, User } from "./types";
 
 export { ApiError };
 
@@ -149,8 +149,15 @@ export const api = {
     call("GET", `/api/interview-openings${qs(f)}`, () => store.listOpenings(f)),
   getOpening: (id: string) =>
     call("GET", `/api/interview-openings/${id}`, () => store.getOpening(id)),
-  createOpening: (input: Parameters<typeof store.createOpening>[1]) =>
+  createOpening: (input: store.OpeningInput) =>
     call("POST", "/api/interview-openings", () => store.createOpening(authToken, input), input),
+  updateOpening: (id: string, input: store.OpeningInput) =>
+    call(
+      "PUT",
+      `/api/interview-openings/${id}`,
+      () => store.updateOpening(authToken, id, input),
+      input,
+    ),
   deleteOpening: (id: string) =>
     call("DELETE", `/api/interview-openings/${id}`, () => store.deleteOpening(authToken, id)),
 
@@ -177,6 +184,12 @@ export const api = {
       store.rateConsultation(authToken, id, input),
       input,
     ),
+
+  /* testimonials */
+  listTestimonials: (f: store.TestimonialFilters) =>
+    call("GET", `/api/testimonials${qs(f)}`, () => store.listTestimonials(f)),
+  createTestimonial: (input: store.TestimonialInput) =>
+    call("POST", "/api/testimonials", () => store.createTestimonial(authToken, input), input),
 
   /* reports */
   report: (input: Parameters<typeof store.createReport>[1]) => {
@@ -220,4 +233,16 @@ export const api = {
     ),
   adminCompanies: () =>
     call("GET", "/api/admin/companies", () => store.adminListCompanies(authToken)),
+  adminTestimonials: (status?: TestimonialStatus) =>
+    call("GET", `/api/admin/testimonials${qs({ status })}`, () =>
+      store.adminListTestimonials(authToken, status),
+    ),
+  approveTestimonial: (id: string) =>
+    call("POST", `/api/admin/testimonials/${id}/approve`, () =>
+      store.setTestimonialStatus(authToken, id, true),
+    ),
+  rejectTestimonial: (id: string) =>
+    call("POST", `/api/admin/testimonials/${id}/reject`, () =>
+      store.setTestimonialStatus(authToken, id, false),
+    ),
 };

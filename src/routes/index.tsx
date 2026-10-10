@@ -16,6 +16,7 @@ import { api } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth";
 import { relativeFromNow } from "@/lib/format";
 import { FormattedText } from "@/components/formatted-text";
+import { ShareStoryButton, TestimonialCard } from "@/components/testimonials";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -62,6 +63,10 @@ function Home() {
   const latest = useQuery({
     queryKey: ["questions", "latest"],
     queryFn: () => api.listQuestions({ pageSize: 4 }),
+  });
+  const stories = useQuery({
+    queryKey: ["testimonials", "home"],
+    queryFn: () => api.listTestimonials({ pageSize: 3 }),
   });
 
   return (
@@ -260,6 +265,45 @@ function Home() {
             </article>
           ))}
         </div>
+      </section>
+
+      <section aria-labelledby="stories-heading" className="mx-auto max-w-6xl px-4 pb-10 sm:px-6">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+          <h2 id="stories-heading" className="min-w-0 truncate text-xl font-bold">
+            <span className="mr-2 inline-block h-4 w-1 rounded bg-primary align-middle" />
+            Success stories
+            {stories.data?.total ? (
+              <Badge variant="secondary" className="ml-2 align-middle">
+                {stories.data.total}
+              </Badge>
+            ) : null}
+          </h2>
+          <Link
+            to="/testimonials"
+            className="shrink-0 text-sm font-medium text-primary underline-offset-4 hover:underline"
+          >
+            Read all stories
+          </Link>
+        </div>
+        <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+          Candidates share which questions and openings helped them crack their interviews.
+        </p>
+
+        {stories.data && stories.data.items.length > 0 ? (
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            {stories.data.items.map((t) => (
+              <TestimonialCard key={t.id} testimonial={t} />
+            ))}
+          </div>
+        ) : stories.isSuccess ? (
+          <div className="surface mt-4 flex flex-wrap items-center justify-between gap-3 p-5">
+            <p className="text-sm text-muted-foreground">
+              Did a question or opening here help you? Your story could encourage the next
+              candidate.
+            </p>
+            <ShareStoryButton targetType="General" size="sm" />
+          </div>
+        ) : null}
       </section>
 
       <section aria-labelledby="latest-heading" className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">

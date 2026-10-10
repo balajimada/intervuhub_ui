@@ -9,6 +9,10 @@ import type {
   InterviewQuestion,
   Paged,
   ReportTargetType,
+  Testimonial,
+  TestimonialOutcome,
+  TestimonialStatus,
+  TestimonialTargetType,
   User,
 } from "./types";
 
@@ -36,6 +40,10 @@ interface StoredUser extends User {
   resumeName?: string | undefined;
 }
 
+interface StoredTestimonial extends Testimonial {
+  authorId: string;
+}
+
 interface Db {
   users: StoredUser[];
   companies: Company[];
@@ -43,6 +51,7 @@ interface Db {
   openings: InterviewOpening[];
   reports: ContentReport[];
   consultations: Consultation[];
+  testimonials: StoredTestimonial[];
 }
 
 const EMPTY: Db = {
@@ -52,6 +61,7 @@ const EMPTY: Db = {
   openings: [],
   reports: [],
   consultations: [],
+  testimonials: [],
 };
 
 function hasStorage() {
@@ -310,7 +320,13 @@ export function deleteAccount(token: string | null, input: { password: string })
   if (user.password !== input.password) throw new ApiError(400, "Password is incorrect.");
   const db = read();
   db.users = db.users.filter((u) => u.id !== user.id);
+  detachTestimonials(
+    db,
+    "Opening",
+    db.openings.filter((o) => o.authorId === user.id).map((o) => o.id),
+  );
   db.openings = db.openings.filter((o) => o.authorId !== user.id);
+  db.testimonials = db.testimonials.filter((t) => t.authorId !== user.id);
   db.questions = db.questions.map((q) =>
     q.authorId === user.id ? { ...q, authorName: "Deleted user" } : q,
   );
@@ -459,6 +475,7 @@ export function deleteQuestion(token: string | null, id: string) {
   if (!question) throw new ApiError(404, "Question not found.");
   if (question.authorId !== user.id && user.role !== "Admin")
     throw new ApiError(403, "You can only delete questions you posted.");
+  detachTestimonials(db, "Question", [id]);
   db.questions = db.questions.filter((q) => q.id !== id);
   write(db);
   return { deleted: true };
@@ -496,22 +513,19 @@ export function getOpening(id: string) {
   return o;
 }
 
-export function createOpening(
-  token: string | null,
-  input: Omit<
-    InterviewOpening,
-    "id" | "createdAt" | "expiresAt" | "authorId" | "authorName" | "companyName"
-  >,
-) {
+export type OpeningInput = Omit<
+  InterviewOpening,
+  "id" | "createdAt" | "expiresAt" | "authorId" | "authorName" | "companyName"
+>;
+
+export function createOpening(token: string | null, input: OpeningInput) {
   const user = requireUser(token);
   const db = read();
-  const company = db.companies.find((c) => c.id === input.companyId);
-  if (!company) throw new ApiError(400, "Select a valid company.");
   const created = new Date();
   const opening: InterviewOpening = {
     ...input,
     id: uid(),
-    companyName: company.name,
+    companyName: companyNameFor(db, input.companyId),
     createdAt: created.toISOString(),
     expiresAt: new Date(created.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString(),
     authorId: user.id,
@@ -522,6 +536,29 @@ export function createOpening(
   return opening;
 }
 
+export function updateOpening(token: string | null, id: string, input: OpeningInput) {
+  const user = requireUser(token);
+  const db = read();
+  const index = db.openings.findIndex((o) => o.id === id);
+  const existing = db.openings[index];
+  if (!existing) throw new ApiError(404, "Opening not found.");
+  if (existing.authorId !== user.id)
+    throw new ApiError(403, "You can only edit openings you posted.");
+  const { id: _id, createdAt, expiresAt, authorId, authorName } = existing;
+  const updated: InterviewOpening = {
+    ...input,
+    id: _id,
+    createdAt,
+    expiresAt,
+    authorId,
+    authorName,
+    companyName: companyNameFor(db, input.companyId),
+  };
+  db.openings[index] = updated;
+  write(db);
+  return updated;
+}
+
 export function deleteOpening(token: string | null, id: string) {
   const user = requireUser(token);
   const db = read();
@@ -529,9 +566,121 @@ export function deleteOpening(token: string | null, id: string) {
   if (!opening) throw new ApiError(404, "Opening not found.");
   if (opening.authorId !== user.id && user.role !== "Admin")
     throw new ApiError(403, "You can only delete openings you posted.");
+  detachTestimonials(db, "Opening", [id]);
   db.openings = db.openings.filter((o) => o.id !== id);
   write(db);
   return { deleted: true };
+}
+
+/* ---------------------------------------------------------- testimonials */
+
+export interface TestimonialInput {
+  targetType: TestimonialTargetType;
+  targetId?: string | undefined;
+  outcome: TestimonialOutcome;
+  message: string;
+}
+
+export interface TestimonialFilters {
+  targetType?: TestimonialTargetType | undefined;
+  targetId?: string | undefined;
+  page?: number;
+  pageSize?: number;
+}
+
+function publicName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/);
+  const last = parts.length > 1 ? parts[parts.length - 1] : undefined;
+  return last ? `${parts[0]} ${last[0]!.toUpperCase()}.` : fullName;
+}
+
+function toTestimonial({ authorId: _authorId, ...t }: StoredTestimonial): Testimonial {
+  return t;
+}
+
+function detachTestimonials(db: Db, targetType: TestimonialTargetType, ids: string[]) {
+  db.testimonials = db.testimonials.map((t) => {
+    if (t.targetType !== targetType || !t.targetId || !ids.includes(t.targetId)) return t;
+    const { targetId: _targetId, ...rest } = t;
+    return rest;
+  });
+}
+
+function resolveTestimonialTarget(db: Db, user: StoredUser, input: TestimonialInput) {
+  if (input.targetType === "General") return { label: "IntervuHub" };
+  if (!input.targetId) throw new ApiError(400, "Tell us which post helped you.");
+  const target =
+    input.targetType === "Question"
+      ? db.questions.find((q) => q.id === input.targetId && !q.isHidden)
+      : db.openings.find((o) => o.id === input.targetId);
+  if (!target) throw new ApiError(404, `${input.targetType} not found.`);
+  if (target.authorId === user.id)
+    throw new ApiError(400, "You can't share a story about your own post.");
+  const label =
+    "questionText" in target
+      ? target.questionText.replace(/\s+/g, " ").slice(0, 120)
+      : `${target.role} @ ${target.companyName}`;
+  return { targetId: target.id, label };
+}
+
+export function createTestimonial(token: string | null, input: TestimonialInput) {
+  const user = requireUser(token);
+  const db = read();
+  const { targetId, label } = resolveTestimonialTarget(db, user, input);
+  const duplicate = db.testimonials.some(
+    (t) =>
+      t.authorId === user.id &&
+      t.targetType === input.targetType &&
+      t.targetId === targetId &&
+      t.status !== "Rejected",
+  );
+  if (duplicate) throw new ApiError(409, "You've already shared a story for this. Thank you!");
+  const testimonial: StoredTestimonial = {
+    id: uid(),
+    authorId: user.id,
+    authorName: publicName(user.name),
+    targetType: input.targetType,
+    ...(targetId ? { targetId } : {}),
+    targetLabel: label,
+    outcome: input.outcome,
+    message: input.message.trim(),
+    status: "Pending",
+    createdAt: now(),
+  };
+  db.testimonials.push(testimonial);
+  write(db);
+  return toTestimonial(testimonial);
+}
+
+export function listTestimonials(f: TestimonialFilters) {
+  const items = read()
+    .testimonials.filter(
+      (t) =>
+        t.status === "Approved" &&
+        (!f.targetType || t.targetType === f.targetType) &&
+        (!f.targetId || t.targetId === f.targetId),
+    )
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .map(toTestimonial);
+  return paginate(items, f.page ?? 1, f.pageSize ?? 12);
+}
+
+export function adminListTestimonials(token: string | null, status?: TestimonialStatus) {
+  requireAdmin(token);
+  return read()
+    .testimonials.filter((t) => !status || t.status === status)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .map(toTestimonial);
+}
+
+export function setTestimonialStatus(token: string | null, id: string, approved: boolean) {
+  requireAdmin(token);
+  const db = read();
+  const t = db.testimonials.find((x) => x.id === id);
+  if (!t) throw new ApiError(404, "Story not found.");
+  t.status = approved ? "Approved" : "Rejected";
+  write(db);
+  return toTestimonial(t);
 }
 
 /* --------------------------------------------------------------- reports */

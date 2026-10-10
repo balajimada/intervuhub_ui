@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, EyeOff, RotateCcw, Search, ShieldBan, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api/client";
-import type { ContentReport, User } from "@/lib/api/types";
+import type { ContentReport, TestimonialStatus, User } from "@/lib/api/types";
 import { collectErrors, suspendSchema, type FieldErrors } from "@/lib/validation";
 import { formatDate, relativeFromNow } from "@/lib/format";
 import { RequireAuth } from "@/components/require-auth";
@@ -51,13 +51,15 @@ function AdminPage() {
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       <h1 className="text-2xl font-bold sm:text-3xl">Moderation console</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Work the report queue, approve companies and manage member accounts.
+        Work the report queue, approve companies, publish success stories and manage member
+        accounts.
       </p>
 
       <Tabs defaultValue="reports" className="mt-6">
         <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="companies">Companies</TabsTrigger>
+          <TabsTrigger value="stories">Stories</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
         </TabsList>
 
@@ -66,6 +68,9 @@ function AdminPage() {
         </TabsContent>
         <TabsContent value="companies" className="mt-4">
           <CompaniesQueue />
+        </TabsContent>
+        <TabsContent value="stories" className="mt-4">
+          <StoriesQueue />
         </TabsContent>
         <TabsContent value="users" className="mt-4">
           <UsersPanel />
@@ -300,6 +305,98 @@ function CompaniesQueue() {
             </Button>
           </div>
         </div>
+      ))}
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------- stories */
+
+const STORY_STATUSES: TestimonialStatus[] = ["Pending", "Approved", "Rejected"];
+
+function StoriesQueue() {
+  const queryClient = useQueryClient();
+  const [status, setStatus] = useState<TestimonialStatus>("Pending");
+  const query = useQuery({
+    queryKey: ["admin", "testimonials", status],
+    queryFn: () => api.adminTestimonials(status),
+  });
+
+  const act = useMutation({
+    mutationFn: ({ id, approve }: { id: string; approve: boolean }) =>
+      approve ? api.approveTestimonial(id) : api.rejectTestimonial(id),
+    onSuccess: (t) => {
+      toast.success(t.status === "Approved" ? "Story published." : "Story rejected.");
+      queryClient.invalidateQueries({ queryKey: ["admin", "testimonials"] });
+      queryClient.invalidateQueries({ queryKey: ["testimonials"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update the story."),
+  });
+
+  const data = query.data;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        {STORY_STATUSES.map((s) => (
+          <Button
+            key={s}
+            size="sm"
+            variant={status === s ? "default" : "outline"}
+            onClick={() => setStatus(s)}
+          >
+            {s}
+          </Button>
+        ))}
+      </div>
+
+      {query.isPending ? <ListSkeleton rows={3} /> : null}
+      {query.isError ? <ErrorState error={query.error} onRetry={() => query.refetch()} /> : null}
+      {data && data.length === 0 ? (
+        <EmptyState
+          title={status === "Pending" ? "No stories waiting" : `No ${status.toLowerCase()} stories`}
+          description="When members share how a question or opening helped them, it lands here for review before going public."
+        />
+      ) : null}
+
+      {data?.map((t) => (
+        <article key={t.id} className="surface space-y-3 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline">{t.targetType}</Badge>
+              <Badge variant="secondary">{t.outcome}</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {relativeFromNow(t.createdAt)} · {t.authorName}
+            </p>
+          </div>
+          {t.targetType !== "General" ? (
+            <p className="line-clamp-2 text-sm font-medium">{t.targetLabel}</p>
+          ) : null}
+          <p className="whitespace-pre-line text-sm text-muted-foreground">
+            &ldquo;{t.message}&rdquo;
+          </p>
+          <div className="flex flex-wrap gap-2 border-t pt-3">
+            <Button
+              size="sm"
+              disabled={act.isPending || t.status === "Approved"}
+              onClick={() => act.mutate({ id: t.id, approve: true })}
+            >
+              <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+              {t.status === "Rejected" ? "Publish anyway" : "Publish"}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-destructive"
+              disabled={act.isPending || t.status === "Rejected"}
+              onClick={() => act.mutate({ id: t.id, approve: false })}
+            >
+              <XCircle className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+              {t.status === "Approved" ? "Unpublish" : "Reject"}
+            </Button>
+          </div>
+        </article>
       ))}
     </div>
   );

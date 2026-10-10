@@ -21,7 +21,7 @@ const navLinks = [
   { to: "/openings", label: "Openings" },
   { to: "/trainers", label: "Trainers" },
   { to: "/consultations", label: "Consultations" },
-  
+  { to: "/testimonials", label: "Stories" },
 ] as const;
 
 export function SiteHeader() {
