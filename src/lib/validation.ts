@@ -34,7 +34,7 @@ export const trainerProfileSchema = z.object({
     .trim()
     .min(PROFILE_SUMMARY_MIN, `Write at least ${PROFILE_SUMMARY_MIN} characters about your experience.`)
     .max(PROFILE_SUMMARY_MAX, `Keep it under ${PROFILE_SUMMARY_MAX} characters.`),
-  resumeName: z.string().trim().min(1, "Upload your resume (PDF or DOC, up to 5 MB).").max(200),
+  resumeName: z.string().trim().max(200).default(""),
 });
 
 export const registerSchema = z
