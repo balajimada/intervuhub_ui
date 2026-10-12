@@ -32,7 +32,6 @@ export const Route = createFileRoute("/auth/register")({
 
 function RegisterPage() {
   const navigate = useNavigate();
-  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [values, setValues] = useState({
     name: "",
     email: "",
@@ -46,8 +45,7 @@ function RegisterPage() {
   const [errors, setErrors] = useState<FieldErrors>({});
 
   const submit = useMutation({
-    mutationFn: (input: typeof values & { resumeFile: File | null }) =>
-      api.register({ ...input, resumeFile: input.resumeFile }),
+    mutationFn: (input: typeof values) => api.register(input),
     onSuccess: (res) => {
       toast.success("Account created. Enter the code we sent to your email.", {
         ...(res.devOtp ? { description: ``, duration: 10000 } : {}),
@@ -65,7 +63,7 @@ function RegisterPage() {
       return;
     }
     setErrors({});
-    submit.mutate({ ...values, resumeFile });
+    submit.mutate(values);
   };
 
   const field = (key: keyof typeof values) => ({
@@ -193,7 +191,6 @@ function RegisterPage() {
             <TrainerProfileFields
               value={values}
               onChange={(patch) => setValues((v) => ({ ...v, ...patch }))}
-              onResumeFile={setResumeFile}
               errors={errors}
             />
           </div>

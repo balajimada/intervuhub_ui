@@ -23,7 +23,7 @@ export function TrainerProfileFields({
 }: {
   value: TrainerProfileValues;
   onChange: (patch: Partial<TrainerProfileValues>) => void;
-  onResumeFile: (file: File | null) => void;
+  onResumeFile?: (file: File | null) => void;
   errors: FieldErrors;
   idPrefix?: string;
 }) {
@@ -69,33 +69,35 @@ export function TrainerProfileFields({
         ) : null}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor={ids.resume}>Resume</Label>
-        <Input
-          id={ids.resume}
-          type="file"
-          accept=".pdf,.doc,.docx"
-          onChange={(e) => {
-            const file = e.target.files?.[0] ?? null;
-            if (file && file.size > MAX_RESUME_BYTES) {
-              toast.error("Resume must be under 5 MB.");
-              e.target.value = "";
-              onChange({ resumeName: "" });
-              onResumeFile(null);
-              return;
-            }
-            onChange({ resumeName: file?.name ?? "" });
-            onResumeFile(file);
-          }}
-        />
-        <p className="text-xs text-muted-foreground">PDF or Word document, up to 5 MB.</p>
-        {value.resumeName ? (
-          <p className="text-xs text-primary">Attached: {value.resumeName}</p>
-        ) : null}
-        {errors["resumeName"] ? (
-          <p className="text-sm text-destructive">{errors["resumeName"]}</p>
-        ) : null}
-      </div>
+      {onResumeFile ? (
+        <div className="space-y-2">
+          <Label htmlFor={ids.resume}>Resume (optional)</Label>
+          <Input
+            id={ids.resume}
+            type="file"
+            accept=".pdf,.doc,.docx"
+            onChange={(e) => {
+              const file = e.target.files?.[0] ?? null;
+              if (file && file.size > MAX_RESUME_BYTES) {
+                toast.error("Resume must be under 5 MB.");
+                e.target.value = "";
+                onChange({ resumeName: "" });
+                onResumeFile(null);
+                return;
+              }
+              onChange({ resumeName: file?.name ?? "" });
+              onResumeFile(file);
+            }}
+          />
+          <p className="text-xs text-muted-foreground">PDF or Word document, up to 5 MB.</p>
+          {value.resumeName ? (
+            <p className="text-xs text-primary">Attached: {value.resumeName}</p>
+          ) : null}
+          {errors["resumeName"] ? (
+            <p className="text-sm text-destructive">{errors["resumeName"]}</p>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
