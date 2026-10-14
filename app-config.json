@@ -1,0 +1,6 @@
+{
+  "runtime": "nodejs20",
+  "command": "node .output/server/index.mjs",
+  "memory": 512,
+  "stack": "node"
+}

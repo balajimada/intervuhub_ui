@@ -12,4 +12,8 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Pass the target platform override downstream to Nitro's build task
+  nitro: {
+    preset: "node-server"
+  }
 });
