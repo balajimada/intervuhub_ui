@@ -1,0 +1,9 @@
+{
+  "homepage": "index.html",
+  "routing_rules": [
+    {
+      "source": "/**",
+      "destination": "/index.html"
+    }
+  ]
+}
