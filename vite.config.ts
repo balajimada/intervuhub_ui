@@ -7,14 +7,18 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
-  tanstackStart: {
-    // 1. Force the framework to output a standard static SPA bundle
-    spa: {
-      enabled: true
+  // Turn off the Nitro/SSR execution engine entirely
+  tanstackStart: false, 
+  
+  // Directly pass standard Vite single-page application instructions
+  vite: {
+    build: {
+      ssr: false, // Ensure SSR bundling processes are completely killed
+      outDir: "dist", // Outputs standard frontend web files to 'dist'
+    },
+    resolve: {
+      // Resolves the warning message emitted by the bundler
+      tsconfigPaths: true 
     }
-  },
-  nitro: {
-    // 2. Change the compilation target to static hosting files
-    preset: "static"
   }
 });
