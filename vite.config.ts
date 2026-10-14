@@ -8,12 +8,13 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
   tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
-    server: { entry: "server" },
+    // 1. Force the framework to output a standard static SPA bundle
+    spa: {
+      enabled: true
+    }
   },
-  // Pass the target platform override downstream to Nitro's build task
   nitro: {
-    preset: "node-server"
+    // 2. Change the compilation target to static hosting files
+    preset: "static"
   }
 });
