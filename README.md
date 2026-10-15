@@ -6,6 +6,10 @@ Use this prompt with a coding assistant. The backend API already exists and is o
 
 Assumption: stack is React + TypeScript (Vite), calling the existing REST API over HTTP/JSON with a bearer JWT. If your actual frontend stack differs (Angular, Next.js, plain HTML, etc.), swap that in — everything else below (screens, flows, endpoints, validation) still applies.
 
+## Zoho Catalyst Slate deployment
+
+This app builds as a client-rendered SPA. Use `npm run build` and publish `dist/client` as the static site directory; do not deploy `dist/server`. Configure Slate to serve `dist/client/index.html` as the fallback for client-side routes so refreshing a route such as `/questions` loads the app.
+
 Prompt
 
 You are building the frontend UI for IntervuHub, a platform where job seekers share and search real interview questions by company, tech stack, and experience level, and post short-lived (30-day) interview openings. The backend REST API is already built and deployed — do not create or modify any backend code, migrations, or server logic. Treat the API as a fixed external contract and build only the client application against it.
