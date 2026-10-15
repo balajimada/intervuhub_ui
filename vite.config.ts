@@ -10,6 +10,11 @@ export default defineConfig({
   // Zoho Catalyst Slate hosts static assets, so ship a client-rendered SPA shell
   // instead of a Nitro/SSR server bundle.
   nitro: false,
+  vite: {
+    // TanStack's prerender step starts Vite preview; bind IPv4 for build
+    // environments that do not support the default IPv6 wildcard address.
+    preview: { host: "127.0.0.1" },
+  },
   tanstackStart: {
     spa: {
       enabled: true,
