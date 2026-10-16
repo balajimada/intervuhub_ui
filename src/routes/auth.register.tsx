@@ -43,9 +43,10 @@ function RegisterPage() {
     resumeName: "",
   });
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
 
   const submit = useMutation({
-    mutationFn: (input: typeof values) => api.register(input),
+    mutationFn: (input: typeof values) => api.register({ ...input, resumeFile }),
     onSuccess: (res) => {
       toast.success("Account created. Enter the code we sent to your email.", {
         ...(res.devOtp ? { description: ``, duration: 10000 } : {}),
@@ -159,7 +160,15 @@ function RegisterPage() {
           <legend className="text-sm font-medium">I am a</legend>
           <RadioGroup
             value={values.role}
-            onValueChange={(v) => setValues({ ...values, role: v as "JobSeeker" | "Trainer" })}
+            onValueChange={(v) => {
+              const role = v as "JobSeeker" | "Trainer";
+              setValues((current) => ({
+                ...current,
+                role,
+                ...(role === "JobSeeker" ? { resumeName: "" } : {}),
+              }));
+              if (role === "JobSeeker") setResumeFile(null);
+            }}
             className="grid grid-cols-2 gap-3"
           >
             <Label
@@ -191,6 +200,7 @@ function RegisterPage() {
             <TrainerProfileFields
               value={values}
               onChange={(patch) => setValues((v) => ({ ...v, ...patch }))}
+              onResumeFile={setResumeFile}
               errors={errors}
             />
           </div>
