@@ -10,6 +10,10 @@ Assumption: stack is React + TypeScript (Vite), calling the existing REST API ov
 
 This app builds as a client-rendered SPA. Use `npm run build` and publish `dist/client` as the static site directory; do not deploy `dist/server`. Configure Slate to serve `dist/client/index.html` as the fallback for client-side routes so refreshing a route such as `/questions` loads the app.
 
+## Vercel deployment
+
+`vercel.json` publishes `dist/client` and rewrites client-side routes to `index.html`. This lets direct navigation and page refreshes work on routes such as `/questions` and `/account`.
+
 Prompt
 
 You are building the frontend UI for IntervuHub, a platform where job seekers share and search real interview questions by company, tech stack, and experience level, and post short-lived (30-day) interview openings. The backend REST API is already built and deployed — do not create or modify any backend code, migrations, or server logic. Treat the API as a fixed external contract and build only the client application against it.
